@@ -1,0 +1,9 @@
+<dependencies>
+    <androidPackages>
+        <androidPackage spec="de.kishorrana:signalboy_android:1.0.1">
+            <repositories>
+                <repository>Signalboy/Editor/GeneratedLocalRepo</repository>
+            </repositories>
+        </androidPackage>
+    </androidPackages>
+</dependencies>

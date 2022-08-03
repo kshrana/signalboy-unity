@@ -1,0 +1,17 @@
+{
+  "name": "de.kishorrana.signalboy_unity",
+  "version": "1.0.0",
+  "displayName": "Signalboy Plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kshrana/signalboy-unity.git"
+  },
+  "license": "MIT",
+  "samples": [
+    {
+      "displayName": "Default Runtime",
+      "description": "Contains sample GameObjects that enable usage of Signalboy in runtime.",
+      "path": "Samples~/Default Runtime"
+    }
+  ]
+}
