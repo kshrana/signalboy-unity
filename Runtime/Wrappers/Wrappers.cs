@@ -7,7 +7,7 @@ using UnityEngine;
 // companion Signalboy helper library for Android.
 namespace Signalboy.Wrappers
 {
-    internal class SignalboyFacadeWrapper
+    public class SignalboyFacadeWrapper
     {
         internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade";
         internal static string EXTRA_CONFIGURATION
@@ -69,7 +69,7 @@ namespace Signalboy.Wrappers
             signalboyServiceInstance.Call("unsetOnConnectionStateUpdateListener");
         }
 
-        internal class Configuration
+        public class Configuration
         {
             internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade$Configuration";
 
@@ -82,9 +82,9 @@ namespace Signalboy.Wrappers
             }
             );
 
-            internal static Configuration Default => _Default.Value;
+            public static Configuration Default => _Default.Value;
 
-            internal long normalizationDelay
+            public long normalizationDelay
             {
                 get => javaInstance.Get<long>("normalizationDelay");
                 set => javaInstance.Set<long>("normalizationDelay", value);
@@ -92,7 +92,7 @@ namespace Signalboy.Wrappers
 
             private AndroidJavaObject javaInstance;
 
-            internal Configuration(long normalizationDelay) : this(null)
+            public Configuration(long normalizationDelay) : this(null)
             {
                 this.normalizationDelay = normalizationDelay;
             }

@@ -44,7 +44,13 @@ namespace Signalboy
             }
         }
 
+        // convenience method
         public void BindService()
+        {
+            BindService(SignalboyFacadeWrapper.Configuration.Default);
+        }
+
+        public void BindService(SignalboyFacadeWrapper.Configuration configuration)
         {
             using (var context = AndroidHelper.GetCurrentActivity())
             {
@@ -53,7 +59,6 @@ namespace Signalboy
                 {
                     intent = intent.Call<AndroidJavaObject>("setComponent", componentName);
                 }
-                var configuration = SignalboyFacadeWrapper.Configuration.Default;
                 intent = intent.Call<AndroidJavaObject>("putExtra", SignalboyFacadeWrapper.EXTRA_CONFIGURATION, configuration.GetJavaInstance());
 
                 var isSuccess = context.Call<bool>(
