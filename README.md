@@ -1,4 +1,6 @@
 # Signalboy Plugin for Unity
+Tested for Unity Version: 2020.3.23f1
+
 ## Documentation
 * [Quick Start Example](#quick-start-example)
 * [Dependencies](#dependencies)
