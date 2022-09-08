@@ -13,14 +13,19 @@ namespace Signalboy.Utilities
 {
     public static class AndroidSignalboyPermissionsHelper
     {
-        private static List<string> locationRuntimePermissions = new List<string> {
+        private static List<string> locationRuntimePermissions = new List<string>
+        {
+#if PLATFORM_ANDROID
         Permission.FineLocation,
-    };
+#endif
+        };
         private static List<string> bluetoothRuntimePermissions = new List<string>
-    {
+        {
+#if PLATFORM_ANDROID
         PermissionAPI31.BluetoothConnect,
         PermissionAPI31.BluetoothScan,
-    };
+#endif
+        };
 
         public static async Task<bool> RequestRuntimePermissionsAsync()
         {
@@ -50,6 +55,8 @@ namespace Signalboy.Utilities
             {
                 return true;
             }
+#else
+            throw new PlatformNotSupportedException();
 #endif
         }
 
@@ -62,9 +69,14 @@ namespace Signalboy.Utilities
             var tcs = makeTaskCompletionSource();
             try
             {
+                // `PermissionCallbacks` is only available on Android (UnityEngine.Android)
+#if PLATFORM_ANDROID
                 Permission.RequestUserPermissions(permissions, makePermissionCallbacks(permissions, results =>
                     tcs.TrySetResult(results)
                 ));
+#else
+                throw new PlatformNotSupportedException();
+#endif
             }
             catch (Exception err)
             {
@@ -79,6 +91,7 @@ namespace Signalboy.Utilities
                 TaskCreationOptions.RunContinuationsAsynchronously
             );
 
+#if PLATFORM_ANDROID
         private static PermissionCallbacks makePermissionCallbacks(string[] permissionsToAwait, Action<Dictionary<string, PermissionCallbackResult>> completion)
         {
             var results = new Dictionary<string, PermissionCallbackResult>();
@@ -110,6 +123,7 @@ namespace Signalboy.Utilities
             };
             return callbacks;
         }
+#endif
 
         private static int getAndroidSDKVersion()
         {
@@ -119,15 +133,17 @@ namespace Signalboy.Utilities
                 return version.GetStatic<int>("SDK_INT");
             }
 #else
-            throw System.PlatformNotSupportedException();
+            throw new System.PlatformNotSupportedException();
 #endif
         }
 
         private struct PermissionAPI31
         {
+#if PLATFORM_ANDROID
             public const string BluetoothScan = "android.permission.BLUETOOTH_SCAN";
             public const string BluetoothConnect = "android.permission.BLUETOOTH_CONNECT";
             public const string BluetoothAdvertise = "android.permission.BLUETOOTH_ADVERTISE";
+#endif
         }
 
         private enum PermissionCallbackResult
