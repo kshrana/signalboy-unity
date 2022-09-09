@@ -1,5 +1,5 @@
 # Signalboy Plugin for Unity
-Tested for Unity Version: 2020.3.23f1
+Tested with Unity Version: 2021.3.9f1
 
 ## Documentation
 * [Quick Start Example](#quick-start-example)
@@ -58,8 +58,9 @@ class MyBehaviour: MonoBehaviour
 ## Dependencies
 * [Signalboy Android library](https://github.com/kshrana/signalboy-android) (`de.kishorrana.signalboy_android`)
 
-## Prerequisites
-### EDM4U
+## Installation
+### Prerequisites (skip if already installed)
+#### EDM4U
 The [companion Android library](https://github.com/kshrana/signalboy-android) is distributed as a Maven package. To install it (and its dependencies) you will need to install the [External Dependency Manager for Unity (EDM4U)](https://github.com/googlesamples/unity-jar-resolver) (formerly Play Services Resolver / Jar Resolver) into your Unity-project.
 
 Perform the following steps to setup EDM4U:
@@ -68,8 +69,15 @@ Perform the following steps to setup EDM4U:
   * Download the latest Maven repo[^signalboy-android-releases] and extract it to into your Unity Project root at: `<your-unity-project>/Assets/Signalboy/Editor/GeneratedLocalRepo/` (creating the filepath, if necessary)
 * (may be optional if EDM4U's Auto-Resolution was successful) In the Unity Editor with your project open, select _Assets -> External Dependency Manager -> Android Resolver -> Force Resolve_
 
-## Installation
-### Install via GIT URL
+#### Setup Android SDK Tools (>= 32)
+The Android companion library (*signalboy-android*) requires your Unity project to be built with **Android SDK Tools >= 32**!
+
+* Download latest *Android SDK Tools* (**at least v32**) (easiest via *Android Studio*, s. [Android developer docs](https://developer.android.com/studio/releases/platform-tools#downloads))
+* Use downloaded *Android SDK Tools* in *Unity Editor*:
+  * With your project opened in the *Unity Editor*: Open the application's preferences ("*File*" -> "*Preferences...*") and browse to *External Tools*
+  * Uncheck "*Android SDK Tools Installed with Unity (recommended)*" and specify your custom SDK location (default: `/Users/<username>/Library/Android/sdk`)
+
+### Install package via GIT URL
 Install latest release of this plugin using _Unity's Package Manager_:
 * Either: Select _Window -> Package Manager_ and click the _"+"-Button -> Add package from git URL..._ and enter `https://github.com/kshrana/signalboy-unity.git#main`
 * …or: add this plugin as a package by modifying your `manifest.json` file found at `<your-unity-project>/Packages/manifest.json` to include it as a dependency. Merge the snippet below with your `manifest.json` file to reference it.
