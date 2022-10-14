@@ -52,7 +52,7 @@ namespace Signalboy
 
         public void BindService(SignalboyFacadeWrapper.Configuration configuration)
         {
-            using (var context = AndroidHelper.GetCurrentActivity())
+            using (var context = AndroidHelper.GetCurrentActivity().Call<AndroidJavaObject>("getApplicationContext"))
             {
                 var intent = new AndroidJavaObject("android.content.Intent");
                 using (var componentName = new AndroidJavaObject("android.content.ComponentName", context, SignalboyFacadeWrapper.CLASSNAME))
