@@ -19,13 +19,13 @@ using UnityEngine;
 
 class MyBehaviour: MonoBehaviour
 {
-	private SignalboyBehavior signalboyBehavior;
+	private SignalboyBehaviour signalboyBehaviour;
 
 	void Start()
 	{
 		// Make sure to place the "Signalboy.prefab" into your Scene.
 		var signalboyGameObject = GameObject.Find("Signalboy");
-		signalboyBehavior = signalboyGameObject.GetComponent<SignalboyBehavior>();
+		signalboyBehaviour = signalboyGameObject.GetComponent<SignalboyBehaviour>();
 
 		// Run async-task on ui-thread:
 		new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext()).StartNew(async () =>
@@ -35,22 +35,36 @@ class MyBehaviour: MonoBehaviour
 			{
 				Debug.LogWarning("User did not grant all required permissions!");
 			}
-			try
+
+			SignalboyFacadeWrapper.PrerequisitesResult result = context.signalboyBehaviour.VerifyPrerequisites();
+			if (result.UnmetPrerequisite != null)
 			{
-				signalboyBehavior.VerifyPrerequisites();
-			}
-			catch (Exception err)
-			{
-				Debug.LogError("Missing required (runtime-)permissions. Underlying error: " + err);
+				HandleUnmetPrerequisite(result.UnmetPrerequisite);
 				return;
 			}
-			signalboyBehavior.BindService();
+			signalboyBehaviour.BindService();
 		}
 	}
 
 	public void OnButtonClicked()
 	{
-		signalboyBehavior.SendEvent();
+		signalboyBehaviour.SendEvent();
+	}
+
+	private void HandleUnmetPrerequisite(SignalboyFacadeWrapper.Prerequisite prerequisite)
+	{
+		switch (prerequisite)
+		{
+			case SignalboyFacadeWrapper.Prerequisite.BluetoothEnabledPrerequisite bluetoothEnabledPrerequisite:
+				// Bluetooth should be always on on Oculus.
+				Debug.LogWarning("HandleUnmetPrerequisite: prerequisite=BluetoothEnabledPrerequisite");
+				break;
+			case SignalboyFacadeWrapper.Prerequisite.RuntimePermissionsPrerequisite runtimePermissionsPrerequisite:
+				Debug.LogWarning($"HandleUnmetPrerequisite: prerequisite=RuntimePermissionsPrerequisite(permission={runtimePermissionsPrerequisite.permission})");
+				break;
+			default:
+				throw new ArgumentException($"Unknown case: prerequisite={prerequisite}");
+		}
 	}
 }
 ```
@@ -70,7 +84,7 @@ Perform the following steps to setup EDM4U:
 * (may be optional if EDM4U's Auto-Resolution was successful) In the Unity Editor with your project open, select _Assets -> External Dependency Manager -> Android Resolver -> Force Resolve_
 
 #### Setup Android SDK Tools (>= 32)
-The Android companion library (*signalboy-android*) requires your Unity project to be built with **Android SDK Tools >= 32**!
+The Android companion library (*signalboy-android*) requires your Unity project to be built with **Android SDK Tools >= 33**!
 
 * Download latest *Android SDK Tools* (**at least v32**) (easiest via *Android Studio*, s. [Android developer docs](https://developer.android.com/studio/releases/platform-tools#downloads))
 * Use downloaded *Android SDK Tools* in *Unity Editor*:
@@ -93,34 +107,34 @@ Install latest release of this plugin using _Unity's Package Manager_:
 
 ## Advanced usage
 ### Override default configuration
-Specifiy your custom `SignalboyFacade.Configuration` when binding to the Android-Service using `SignalboyBehavior`. See the example below on how to pass it to the Android helper-library's service:
+Specifiy your custom `SignalboyFacade.Configuration` when binding to the Android-Service using `SignalboyBehaviour`. See the example below on how to pass it to the Android helper-library's service:
 ```cs
 // […]
 class MyBehaviour: MonoBehaviour
 {
-	private SignalboyBehavior signalboyBehavior;
+	private SignalboyBehaviour signalboyBehaviour;
 
 	void Start()
 	{
 		// […]
 		var config = Signalboy.Wrappers.SignalboyFacadeWrapper.Configuration.Default;
-		config.normalizationDelay = 100L;   // in ms
-		signalboyBehavior.BindService(config);
+		config.NormalizationDelay = 100L;   // in ms
+		signalboyBehaviour.BindService(config);
 	}
 }
 ```
 
 ### Observe state
-You can monitor Signalboy-Service's state by setting a delegate on SignalboyBehavior's `connectionStateUpdateCallback`-field. See the example below on how to install the delegate:
+You can monitor Signalboy-Service's state by setting a delegate on SignalboyBehaviour's `ConnectionStateUpdateCallback`-property. See the example below on how to install the delegate:
 ```cs
 // […]
 class MyBehaviour: MonoBehaviour
 {
-	private SignalboyBehavior signalboyBehavior;
+	private SignalboyBehaviour signalboyBehaviour;
 
 	private void SetupSignalboyDelegate()
 	{
-		signalboyBehavior.connectionStateUpdateCallback = OnConnectionStateUpdate;
+		signalboyBehaviour.ConnectionStateUpdateCallback = OnConnectionStateUpdate;
 	}
 
 	// This method will be called on state-updates.
@@ -135,7 +149,7 @@ class MyBehaviour: MonoBehaviour
 				Debug.Log("Connecting");
 				break;
 			case Signalboy.Wrappers.State.StateConnected state:
-				var (hardwareRevision, softwareRevision) = state.deviceInformation;
+				var (hardwareRevision, softwareRevision) = state.DeviceInformation;
 				Debug.Log($"Connected (hardwareRevision={hardwareRevision}, softwareRevision={softwareRevision})");
 				break;
 			default:
