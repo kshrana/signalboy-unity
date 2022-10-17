@@ -35,12 +35,12 @@ namespace Signalboy
         }
         #endregion
 
-        public void VerifyPrerequisites()
+        public SignalboyFacadeWrapper.PrerequisitesResult VerifyPrerequisites()
         {
             using (var context = AndroidHelper.GetCurrentActivity())
             {
                 var bluetoothAdapter = SignalboyFacadeWrapper.GetDefaultAdapter(context);
-                SignalboyFacadeWrapper.VerifyPrerequisites(context, bluetoothAdapter);
+                return SignalboyFacadeWrapper.VerifyPrerequisites(context, bluetoothAdapter);
             }
         }
 
@@ -106,7 +106,7 @@ namespace Signalboy
                 var signalboyFacade = new SignalboyFacadeWrapper(service.Call<AndroidJavaObject>("getService"));
                 signalboyFacade.SetOnConnectionStateUpdateListener(
                     new ConnectionStateUpdateListener(connectionState =>
-                parent.connectionStateUpdateCallback?.Invoke(connectionState))
+                        parent.connectionStateUpdateCallback?.Invoke(connectionState))
                 );
 
                 parent.signalboyFacade = signalboyFacade;

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Signalboy
@@ -6,12 +7,14 @@ namespace Signalboy
     {
         internal static AndroidJavaObject GetCurrentActivity()
         {
-            using (
-                AndroidJavaClass jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer")
-            )
+#if PLATFORM_ANDROID
+            using (AndroidJavaClass jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             {
                 return jc.GetStatic<AndroidJavaObject>("currentActivity");
             }
+#else
+            throw new PlatformNotSupportedException("Requires Android Platform.");
+#endif
         }
     }
 }

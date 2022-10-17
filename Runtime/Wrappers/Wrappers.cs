@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using UnityEngine;
 
 #nullable enable
@@ -41,11 +42,12 @@ namespace Signalboy.Wrappers
             return bluetoothAdapter;
         }
 
-        internal static void VerifyPrerequisites(AndroidJavaObject context, AndroidJavaObject bluetoothAdapter)
+        internal static PrerequisitesResult VerifyPrerequisites(AndroidJavaObject context, AndroidJavaObject bluetoothAdapter)
         {
             using (AndroidJavaClass jc = new AndroidJavaClass(CLASSNAME))
             {
-                jc.CallStatic("verifyPrerequisites", context, bluetoothAdapter);
+                var javaObject = jc.CallStatic<AndroidJavaObject>("verifyPrerequisites", context, bluetoothAdapter);
+                return new PrerequisitesResult(javaObject);
             }
         }
 
@@ -113,6 +115,73 @@ namespace Signalboy.Wrappers
             }
 
             internal AndroidJavaObject GetJavaInstance() => javaInstance;
+        }
+
+        [DebuggerDisplay("UnmetPrerequisite={UnmetPrerequisite}")]
+        public class PrerequisitesResult
+        {
+            internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade$PrerequisitesResult";
+
+            public Prerequisite? UnmetPrerequisite
+            {
+                get
+                {
+                    var javaObject = javaInstance.Get<AndroidJavaObject>("unmetPrerequisite");
+                    return javaObject != null ? PrerequisiteFactory.Wrapping(javaObject) : null;
+                }
+            }
+
+            private AndroidJavaObject javaInstance;
+
+            internal PrerequisitesResult(AndroidJavaObject javaInstance)
+            {
+                this.javaInstance = javaInstance;
+            }
+        }
+
+        public abstract class Prerequisite
+        {
+            internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade$Prerequisite";
+
+            private protected AndroidJavaObject javaInstance;
+
+            internal Prerequisite(AndroidJavaObject javaInstance)
+            {
+                this.javaInstance = javaInstance;
+            }
+
+            public class BluetoothEnabledPrerequisite : Prerequisite
+            {
+                internal BluetoothEnabledPrerequisite(AndroidJavaObject javaInstance) : base(javaInstance) { }
+            }
+
+            [DebuggerDisplay("permission={permission}")]
+            public class RuntimePermissionsPrerequisite : Prerequisite
+            {
+                public string permission => javaInstance.Get<string>("permission");
+                internal RuntimePermissionsPrerequisite(AndroidJavaObject javaInstance) : base(javaInstance) { }
+            }
+        }
+
+        internal static class PrerequisiteFactory
+        {
+            internal static Prerequisite Wrapping(AndroidJavaObject javaObject)
+            {
+                // Note: Nested classes are denoted with "$"-token
+                // e.g. "Lde.kishorrana.signalboy_android.SignalboyFacade$Prerequisite$BluetoothEnabledPrerequisite"
+                var javaSignature = AndroidJNIHelper.GetSignature(javaObject);
+                switch (javaSignature)
+                {
+                    case string it when it.Contains("$Prerequisite$BluetoothEnabledPrerequisite"):
+                        return new Prerequisite.BluetoothEnabledPrerequisite(javaObject);
+                    case string it when it.Contains("$Prerequisite$RuntimePermissionsPrerequisite"):
+                        return new Prerequisite.RuntimePermissionsPrerequisite(javaObject);
+                    case null:
+                        throw new ArgumentNullException(nameof(javaSignature));
+                    default:
+                        throw new ArgumentException($"Unknown case: {javaSignature}");
+                }
+            }
         }
     }
 
