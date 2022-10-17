@@ -22,7 +22,7 @@ namespace Signalboy.Wrappers
             }
         }
 
-        public State state => StateFactory.Wrapping(signalboyServiceInstance.Get<AndroidJavaObject>("state"));
+        public State State => StateFactory.Wrapping(signalboyServiceInstance.Get<AndroidJavaObject>("state"));
 
         private AndroidJavaObject signalboyServiceInstance;
 
@@ -86,7 +86,7 @@ namespace Signalboy.Wrappers
 
             public static Configuration Default => _Default.Value;
 
-            public long normalizationDelay
+            public long NormalizationDelay
             {
                 get => javaInstance.Get<long>("normalizationDelay");
                 set => javaInstance.Set<long>("normalizationDelay", value);
@@ -96,7 +96,7 @@ namespace Signalboy.Wrappers
 
             public Configuration(long normalizationDelay) : this(null)
             {
-                this.normalizationDelay = normalizationDelay;
+                this.NormalizationDelay = normalizationDelay;
             }
 
             private Configuration(AndroidJavaObject? javaInstance)
@@ -187,42 +187,45 @@ namespace Signalboy.Wrappers
 
     internal class ConnectionStateUpdateListener : AndroidJavaProxy
     {
-        internal ConnectionStateUpdateCallback connectionStateUpdateCallback;
+        internal ConnectionStateUpdateCallback ConnectionStateUpdateCallback;
 
         internal ConnectionStateUpdateListener(ConnectionStateUpdateCallback callback) : base(
             "de.kishorrana.signalboy_android.SignalboyFacade$OnConnectionStateUpdateListener"
         )
         {
-            this.connectionStateUpdateCallback = callback;
+            this.ConnectionStateUpdateCallback = callback;
         }
 
         private void stateUpdated(AndroidJavaObject state)
         {
-            connectionStateUpdateCallback(StateFactory.Wrapping(state));
+            ConnectionStateUpdateCallback(StateFactory.Wrapping(state));
         }
     }
 
     public class SignalboyDeviceInformation
     {
-        public string hardwareRevision;
-        public string softwareRevision;
+        private string _hardwareRevision;
+        public string HardwareRevision => _hardwareRevision;
+
+        private string _softwareRevision;
+        public string SoftwareRevision => _softwareRevision;
 
         internal SignalboyDeviceInformation(AndroidJavaObject javaObject)
         {
-            hardwareRevision = javaObject.Get<string>("hardwareRevision");
-            softwareRevision = javaObject.Get<string>("softwareRevision");
+            _hardwareRevision = javaObject.Get<string>("hardwareRevision");
+            _softwareRevision = javaObject.Get<string>("softwareRevision");
         }
 
         public void Deconstruct(out string hRevision, out string sRevision)
         {
-            hRevision = hardwareRevision;
-            sRevision = softwareRevision;
+            hRevision = HardwareRevision;
+            sRevision = SoftwareRevision;
         }
     }
 
     public abstract class State
     {
-        protected AndroidJavaObject javaObject;
+        private protected AndroidJavaObject javaObject;
 
         public State(AndroidJavaObject javaObject)
         {
@@ -231,7 +234,7 @@ namespace Signalboy.Wrappers
 
         public sealed class StateDisconnected : State
         {
-            public AndroidJavaObject? cause => javaObject.Get<AndroidJavaObject>("cause");
+            public AndroidJavaObject? Cause => javaObject.Get<AndroidJavaObject>("cause");
 
             internal StateDisconnected(AndroidJavaObject javaObject) : base(javaObject) { }
         }
@@ -243,8 +246,8 @@ namespace Signalboy.Wrappers
 
         public sealed class StateConnected : State
         {
-            public SignalboyDeviceInformation deviceInformation => new SignalboyDeviceInformation(javaObject.Get<AndroidJavaObject>("deviceInformation"));
-            public bool isSynced => javaObject.Get<bool>("isSynced");
+            public SignalboyDeviceInformation DeviceInformation => new SignalboyDeviceInformation(javaObject.Get<AndroidJavaObject>("deviceInformation"));
+            public bool IsSynced => javaObject.Get<bool>("isSynced");
 
             internal StateConnected(AndroidJavaObject javaObject) : base(javaObject) { }
         }

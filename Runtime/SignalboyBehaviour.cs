@@ -6,10 +6,10 @@ using UnityEngine;
 
 namespace Signalboy
 {
-    public class SignalboyBehavior : MonoBehaviour
+    public class SignalboyBehaviour : MonoBehaviour
     {
-        public State? state { get => signalboyFacade?.state; }
-        public ConnectionStateUpdateCallback? connectionStateUpdateCallback;
+        public State? State => signalboyFacade?.State;
+        public ConnectionStateUpdateCallback? ConnectionStateUpdateCallback;
 
         // Not-null when Android-Service has been bound successfully.
         private SignalboyFacadeWrapper? signalboyFacade;
@@ -93,9 +93,9 @@ namespace Signalboy
 
         private class ServiceConnection : AndroidJavaProxy
         {
-            private SignalboyBehavior parent;
+            private SignalboyBehaviour parent;
 
-            internal ServiceConnection(SignalboyBehavior parent) : base("android.content.ServiceConnection")
+            internal ServiceConnection(SignalboyBehaviour parent) : base("android.content.ServiceConnection")
             {
                 this.parent = parent;
             }
@@ -106,7 +106,7 @@ namespace Signalboy
                 var signalboyFacade = new SignalboyFacadeWrapper(service.Call<AndroidJavaObject>("getService"));
                 signalboyFacade.SetOnConnectionStateUpdateListener(
                     new ConnectionStateUpdateListener(connectionState =>
-                        parent.connectionStateUpdateCallback?.Invoke(connectionState))
+                        parent.ConnectionStateUpdateCallback?.Invoke(connectionState))
                 );
 
                 parent.signalboyFacade = signalboyFacade;
