@@ -8,9 +8,9 @@ using UnityEngine;
 // companion Signalboy helper library for Android.
 namespace Signalboy.Wrappers
 {
-    public class SignalboyFacadeWrapper
+    public class SignalboyServiceWrapper
     {
-        internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade";
+        internal const string CLASSNAME = "de.kishorrana.signalboy_android.service.SignalboyService";
         internal static string EXTRA_CONFIGURATION
         {
             get
@@ -26,7 +26,7 @@ namespace Signalboy.Wrappers
 
         private AndroidJavaObject signalboyServiceInstance;
 
-        internal SignalboyFacadeWrapper(AndroidJavaObject signalboyServiceInstance)
+        internal SignalboyServiceWrapper(AndroidJavaObject signalboyServiceInstance)
         {
             this.signalboyServiceInstance = signalboyServiceInstance;
         }
@@ -51,9 +51,9 @@ namespace Signalboy.Wrappers
             }
         }
 
-        internal void SendEvent()
+        internal void TrySendEvent()
         {
-            signalboyServiceInstance.Call("sendEvent");
+            signalboyServiceInstance.Call("trySendEvent");
         }
 
         internal void TryTriggerSync()
@@ -73,7 +73,7 @@ namespace Signalboy.Wrappers
 
         public class Configuration
         {
-            internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade$Configuration";
+            internal const string CLASSNAME = "de.kishorrana.signalboy_android.service.SignalboyService$Configuration";
 
             private static Lazy<Configuration> _Default = new Lazy<Configuration>(() =>
             {
@@ -120,8 +120,6 @@ namespace Signalboy.Wrappers
         [DebuggerDisplay("UnmetPrerequisite={UnmetPrerequisite}")]
         public class PrerequisitesResult
         {
-            internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade$PrerequisitesResult";
-
             public Prerequisite? UnmetPrerequisite
             {
                 get
@@ -141,8 +139,6 @@ namespace Signalboy.Wrappers
 
         public abstract class Prerequisite
         {
-            internal const string CLASSNAME = "de.kishorrana.signalboy_android.SignalboyFacade$Prerequisite";
-
             private protected AndroidJavaObject javaInstance;
 
             internal Prerequisite(AndroidJavaObject javaInstance)
@@ -168,7 +164,7 @@ namespace Signalboy.Wrappers
             internal static Prerequisite Wrapping(AndroidJavaObject javaObject)
             {
                 // Note: Nested classes are denoted with "$"-token
-                // e.g. "Lde.kishorrana.signalboy_android.SignalboyFacade$Prerequisite$BluetoothEnabledPrerequisite"
+                // e.g. "Lde.kishorrana.signalboy_android.service.SignalboyPrerequisitesHelper$Prerequisite$BluetoothEnabledPrerequisite"
                 var javaSignature = AndroidJNIHelper.GetSignature(javaObject);
                 switch (javaSignature)
                 {
@@ -190,7 +186,7 @@ namespace Signalboy.Wrappers
         internal ConnectionStateUpdateCallback ConnectionStateUpdateCallback;
 
         internal ConnectionStateUpdateListener(ConnectionStateUpdateCallback callback) : base(
-            "de.kishorrana.signalboy_android.SignalboyFacade$OnConnectionStateUpdateListener"
+            "de.kishorrana.signalboy_android.service.SignalboyService$OnConnectionStateUpdateListener"
         )
         {
             this.ConnectionStateUpdateCallback = callback;
@@ -258,7 +254,7 @@ namespace Signalboy.Wrappers
         internal static State Wrapping(AndroidJavaObject javaObject)
         {
             // Note: Nested classes are denoted with "$"-token
-            // e.g. "Lde.kishorrana.signalboy_android.SignalboyFacade$State$Connected"
+            // e.g. "Lde.kishorrana.signalboy_android.service.SignalboyService$State$Connected"
             var javaSignature = AndroidJNIHelper.GetSignature(javaObject);
             switch (javaSignature)
             {

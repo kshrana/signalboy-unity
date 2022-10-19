@@ -8,11 +8,11 @@ namespace Signalboy
 {
     public class SignalboyBehaviour : MonoBehaviour
     {
-        public State? State => signalboyFacade?.State;
+        public State? State => signalboyService?.State;
         public ConnectionStateUpdateCallback? ConnectionStateUpdateCallback;
 
         // Not-null when Android-Service has been bound successfully.
-        private SignalboyFacadeWrapper? signalboyFacade;
+        private SignalboyServiceWrapper? signalboyService;
 
         #region MonoBehaviour - lifecycle
         void Start()
@@ -35,31 +35,31 @@ namespace Signalboy
         }
         #endregion
 
-        public SignalboyFacadeWrapper.PrerequisitesResult VerifyPrerequisites()
+        public SignalboyServiceWrapper.PrerequisitesResult VerifyPrerequisites()
         {
             using (var context = AndroidHelper.GetCurrentActivity())
             {
-                var bluetoothAdapter = SignalboyFacadeWrapper.GetDefaultAdapter(context);
-                return SignalboyFacadeWrapper.VerifyPrerequisites(context, bluetoothAdapter);
+                var bluetoothAdapter = SignalboyServiceWrapper.GetDefaultAdapter(context);
+                return SignalboyServiceWrapper.VerifyPrerequisites(context, bluetoothAdapter);
             }
         }
 
         // convenience method
         public void BindService()
         {
-            BindService(SignalboyFacadeWrapper.Configuration.Default);
+            BindService(SignalboyServiceWrapper.Configuration.Default);
         }
 
-        public void BindService(SignalboyFacadeWrapper.Configuration configuration)
+        public void BindService(SignalboyServiceWrapper.Configuration configuration)
         {
             using (var context = AndroidHelper.GetCurrentActivity().Call<AndroidJavaObject>("getApplicationContext"))
             {
                 var intent = new AndroidJavaObject("android.content.Intent");
-                using (var componentName = new AndroidJavaObject("android.content.ComponentName", context, SignalboyFacadeWrapper.CLASSNAME))
+                using (var componentName = new AndroidJavaObject("android.content.ComponentName", context, SignalboyServiceWrapper.CLASSNAME))
                 {
                     intent = intent.Call<AndroidJavaObject>("setComponent", componentName);
                 }
-                intent = intent.Call<AndroidJavaObject>("putExtra", SignalboyFacadeWrapper.EXTRA_CONFIGURATION, configuration.GetJavaInstance());
+                intent = intent.Call<AndroidJavaObject>("putExtra", SignalboyServiceWrapper.EXTRA_CONFIGURATION, configuration.GetJavaInstance());
 
                 var isSuccess = context.Call<bool>(
                     "bindService",
@@ -77,17 +77,17 @@ namespace Signalboy
 
         public void SendEvent()
         {
-            if (signalboyFacade != null)
+            if (signalboyService != null)
             {
-                signalboyFacade.SendEvent();
+                signalboyService.TrySendEvent();
             }
         }
 
         public void _DebugTriggerSync()
         {
-            if (signalboyFacade != null)
+            if (signalboyService != null)
             {
-                signalboyFacade.TryTriggerSync();
+                signalboyService.TryTriggerSync();
             }
         }
 
@@ -102,14 +102,14 @@ namespace Signalboy
 
             private void onServiceConnected(AndroidJavaObject componentName, AndroidJavaObject service)
             {
-                // service: SignalboyFacade.LocalBinder
-                var signalboyFacade = new SignalboyFacadeWrapper(service.Call<AndroidJavaObject>("getService"));
-                signalboyFacade.SetOnConnectionStateUpdateListener(
+                // service: SignalboyService.LocalBinder
+                var signalboyService = new SignalboyServiceWrapper(service.Call<AndroidJavaObject>("getService"));
+                signalboyService.SetOnConnectionStateUpdateListener(
                     new ConnectionStateUpdateListener(connectionState =>
                         parent.ConnectionStateUpdateCallback?.Invoke(connectionState))
                 );
 
-                parent.signalboyFacade = signalboyFacade;
+                parent.signalboyService = signalboyService;
             }
 
             private void onServiceDisconnected(AndroidJavaObject componentName)
@@ -117,7 +117,7 @@ namespace Signalboy
                 // This is called when the connection with the service has been
                 // unexpectedly disconnected -- that is, its process crashed.
                 Debug.LogError("onServiceDisconnected");
-                parent.signalboyFacade = null;
+                parent.signalboyService = null;
             }
         }
     }
