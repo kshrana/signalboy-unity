@@ -81,7 +81,12 @@ Perform the following steps to setup EDM4U:
 * Make sure that EDM4U is installed in your Unity-project. ([Download latest release here (.unitypackage)](https://github.com/googlesamples/unity-jar-resolver/raw/master/external-dependency-manager-latest.unitypackage))
 * Currently you'll additionally have to provide EDM4U with the latest release of the companion Android library using a **local Maven repo** in your project's Assets:
   * Download the latest Maven repo[^signalboy-android-releases] and extract it to into your Unity Project root at: `<your-unity-project>/Assets/Signalboy/Editor/GeneratedLocalRepo/` (creating the filepath, if necessary)
-* (may be optional if EDM4U's Auto-Resolution was successful) In the Unity Editor with your project open, select _Assets -> External Dependency Manager -> Android Resolver -> Force Resolve_
+  * (_optional, but **strongly recommended**:_) Enable custom Gradle-Template and -Properties for Android Player. See [FR Improve Android Resolver resolution and logging when conflicts occur without mainTemplate.gradle · Issue #444 · googlesamples/unity-jar-resolver · GitHub](https://github.com/googlesamples/unity-jar-resolver/issues/444#issuecomment-884549348).
+    * navigating to the Android Player's settings (_Edit -> Project Settings… -> Player -> Android-tab -> Publishing Settings_) and ticking on the following two checkboxes (s. image below for reference):
+    * "Custom Main Gradle Template"
+	* "Custom Gradle Properties Template"  
+	![Android Player Settings](Resources~/126570100-225245f7-9731-46d5-ab5d-3d49b74226c4.png)
+  * (_optional: when EDM4U's Auto-Resolution is turned off or failed_) In the Unity Editor with your project open, select _Assets -> External Dependency Manager -> Android Resolver -> Force Resolve_
 
 #### Setup Android SDK Tools (>= 32)
 The Android companion library (*signalboy-android*) requires your Unity project to be built with **Android SDK Tools >= 33**!
