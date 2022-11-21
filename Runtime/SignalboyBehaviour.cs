@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Signalboy.Wrappers;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -14,6 +15,8 @@ namespace Signalboy
         private SignalboyServiceWrapper? _signalboyService;
         public ConnectionStateUpdateCallback? ConnectionStateUpdateCallback;
         public State? State => _signalboyService?.State;
+
+        private TaskFactory _uiThreadTaskFactory = null!;
 
         public SignalboyServiceWrapper.PrerequisitesResult VerifyPrerequisites()
         {
@@ -82,7 +85,10 @@ namespace Signalboy
                 var signalboyService = new SignalboyServiceWrapper(service.Call<AndroidJavaObject>("getService"));
                 signalboyService.SetOnConnectionStateUpdateListener(
                     new ConnectionStateUpdateListener(connectionState =>
-                        _parent.ConnectionStateUpdateCallback?.Invoke(connectionState))
+                        _parent._uiThreadTaskFactory.StartNew(() =>
+                        {
+                            _parent.ConnectionStateUpdateCallback?.Invoke(connectionState);
+                        }))
                 );
 
                 _parent._signalboyService = signalboyService;
@@ -104,9 +110,12 @@ namespace Signalboy
             if (Application.isEditor)
             {
                 Debug.Log("Running in editor: Signalboy-Service is not available.");
+                return;
             }
 #if PLATFORM_ANDROID
             // AndroidJNIHelper.debug = true;
+
+            _uiThreadTaskFactory = new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext());
 #else
             Debug.LogError("Signalboy requires Android Platform.");
 #endif
