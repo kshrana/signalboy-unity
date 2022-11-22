@@ -3,6 +3,8 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 using Signalboy.Wrappers;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -12,36 +14,37 @@ namespace Signalboy
     public class SignalboyBehaviour : MonoBehaviour
     {
         // Not-null when Android-Service has been bound successfully.
-        private SignalboyServiceWrapper? _signalboyService;
+        private SignalboyService? _signalboyService;
         public ConnectionStateUpdateCallback? ConnectionStateUpdateCallback;
         public State? State => _signalboyService?.State;
+        public bool HasUserInteractionRequest => _signalboyService?.HasUserInteractionRequest ?? false;
 
         private TaskFactory _uiThreadTaskFactory = null!;
 
-        public SignalboyServiceWrapper.PrerequisitesResult VerifyPrerequisites()
+        public SignalboyService.PrerequisitesResult VerifyPrerequisites()
         {
-            using var context = AndroidHelper.GetCurrentActivity();
-            var bluetoothAdapter = SignalboyServiceWrapper.GetDefaultAdapter(context);
-            return SignalboyServiceWrapper.VerifyPrerequisites(context, bluetoothAdapter);
+            var context = AndroidHelper.GetCurrentActivity();
+            var bluetoothAdapter = SignalboyService.GetDefaultAdapter(context);
+            return SignalboyService.VerifyPrerequisites(context, bluetoothAdapter);
         }
 
         // convenience method
         public void BindService()
         {
-            BindService(SignalboyServiceWrapper.Configuration.Default);
+            BindService(SignalboyService.Configuration.Default);
         }
 
-        public void BindService(SignalboyServiceWrapper.Configuration configuration)
+        public void BindService(SignalboyService.Configuration configuration)
         {
             using var context = AndroidHelper.GetCurrentActivity().Call<AndroidJavaObject>("getApplicationContext");
             var intent = new AndroidJavaObject("android.content.Intent");
             using (var componentName = new AndroidJavaObject("android.content.ComponentName", context,
-                       SignalboyServiceWrapper.CLASSNAME))
+                       SignalboyService.CLASSNAME))
             {
                 intent = intent.Call<AndroidJavaObject>("setComponent", componentName);
             }
 
-            intent = intent.Call<AndroidJavaObject>("putExtra", SignalboyServiceWrapper.EXTRA_CONFIGURATION,
+            intent = intent.Call<AndroidJavaObject>("putExtra", SignalboyService.EXTRA_CONFIGURATION,
                 configuration.GetJavaInstance());
 
             var isSuccess = context.Call<bool>(
@@ -55,6 +58,21 @@ namespace Signalboy
                 "Failed to bind service.",
                 "Package Manager either was unable to find package or security requirements have not been met."
             );
+        }
+
+        public async Task ResolveUserInteractionRequest()
+        {
+            using var activity = AndroidHelper.GetCurrentActivity();
+            if (activity == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            using var userInteractionProxy = await SignalboyService.InjectAssociateFragmentAsync(activity);
+            if (_signalboyService != null)
+            {
+                await _signalboyService.ResolveUserInteractionRequest(activity, userInteractionProxy);
+            }
         }
 
         public void SendEvent()
@@ -82,7 +100,7 @@ namespace Signalboy
             private void onServiceConnected(AndroidJavaObject componentName, AndroidJavaObject service)
             {
                 // service: SignalboyService.LocalBinder
-                var signalboyService = new SignalboyServiceWrapper(service.Call<AndroidJavaObject>("getService"));
+                var signalboyService = new SignalboyService(service.Call<AndroidJavaObject>("getService"));
                 signalboyService.SetOnConnectionStateUpdateListener(
                     new ConnectionStateUpdateListener(connectionState =>
                         _parent._uiThreadTaskFactory.StartNew(() =>
@@ -127,6 +145,4 @@ namespace Signalboy
 
         #endregion
     }
-
-    public delegate void ConnectionStateUpdateCallback(State connectionState);
 }
