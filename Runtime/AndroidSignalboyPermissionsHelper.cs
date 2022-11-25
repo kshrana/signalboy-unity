@@ -12,34 +12,19 @@ namespace Signalboy.Utilities
 {
     public static class AndroidSignalboyPermissionsHelper
     {
-        private static readonly List<string> LocationRuntimePermissions = new()
-        {
-#if PLATFORM_ANDROID
-            Permission.FineLocation,
-#endif
-        };
-
-        private static readonly List<string> BluetoothRuntimePermissions = new()
-        {
-#if PLATFORM_ANDROID
-            PermissionAPI31.BluetoothConnect,
-            PermissionAPI31.BluetoothScan,
-#endif
-        };
-
         public static async Task<bool> RequestRuntimePermissionsAsync()
         {
             if (Application.isEditor) throw new PlatformNotSupportedException();
 
 #if PLATFORM_ANDROID
-            List<string> requiredRuntimePermissions;
-            if (GetAndroidSDKVersion() >= 31)
-                requiredRuntimePermissions = BluetoothRuntimePermissions;
-            else
-                requiredRuntimePermissions = LocationRuntimePermissions;
+            // TODO: Extend to include permissions for ScanDeviceDiscoveryStrategy, once
+            //   Device-Discovery-Selection feature is being implemented
+            var requiredRuntimePermissions =
+                CompanionDeviceDiscoveryStrategyRuntimePermissions.RequiredRuntimePermissions();
 
             if (requiredRuntimePermissions.Any(permission => !Permission.HasUserAuthorizedPermission(permission)))
             {
+                // Request permission for any Runtime-Permission, that has not yet been authorized.
                 var results = await RequestUserPermissionsAsync(requiredRuntimePermissions.ToArray());
                 Debug.Log($"Finished awaiting requested runtime-permissions. (results={results})");
                 return IsEachPermissionGranted(results);
@@ -123,28 +108,6 @@ namespace Signalboy.Utilities
         }
 #endif
 
-        private static int GetAndroidSDKVersion()
-        {
-#if PLATFORM_ANDROID
-            using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
-            {
-                return version.GetStatic<int>("SDK_INT");
-            }
-#else
-            throw new System.PlatformNotSupportedException();
-#endif
-        }
-
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
-        private struct PermissionAPI31
-        {
-#if PLATFORM_ANDROID
-            public const string BluetoothScan = "android.permission.BLUETOOTH_SCAN";
-            public const string BluetoothConnect = "android.permission.BLUETOOTH_CONNECT";
-            public const string BluetoothAdvertise = "android.permission.BLUETOOTH_ADVERTISE";
-#endif
-        }
-
         private enum PermissionCallbackResult
         {
             Denied,
@@ -153,5 +116,51 @@ namespace Signalboy.Utilities
         }
 
         #endregion
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    internal struct PermissionAPI31
+    {
+#if PLATFORM_ANDROID
+        public const string BluetoothScan = "android.permission.BLUETOOTH_SCAN";
+        public const string BluetoothConnect = "android.permission.BLUETOOTH_CONNECT";
+        public const string BluetoothAdvertise = "android.permission.BLUETOOTH_ADVERTISE";
+#endif
+    }
+
+    internal static class ScanDeviceDiscoveryStrategyRuntimePermissions
+    {
+        private static readonly List<string> LocationRuntimePermissions = new()
+        {
+#if PLATFORM_ANDROID
+            Permission.FineLocation,
+#endif
+        };
+
+        private static readonly List<string> BluetoothRuntimePermissions = new()
+        {
+#if PLATFORM_ANDROID
+            PermissionAPI31.BluetoothConnect,
+            PermissionAPI31.BluetoothScan,
+#endif
+        };
+
+        public static List<string> RequiredRuntimePermissions() => AndroidHelper.GetAndroidSDKVersion() >= 31
+            ? BluetoothRuntimePermissions
+            : LocationRuntimePermissions;
+    }
+
+    internal static class CompanionDeviceDiscoveryStrategyRuntimePermissions
+    {
+        private static readonly List<string> BluetoothRuntimePermissions = new()
+        {
+#if PLATFORM_ANDROID
+            PermissionAPI31.BluetoothConnect,
+#endif
+        };
+
+        public static List<string> RequiredRuntimePermissions() => AndroidHelper.GetAndroidSDKVersion() >= 31
+            ? BluetoothRuntimePermissions
+            : /* emptyList */ new List<string>();
     }
 }

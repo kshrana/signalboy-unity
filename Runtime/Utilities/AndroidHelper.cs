@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Signalboy
@@ -13,7 +12,19 @@ namespace Signalboy
                 return jc.GetStatic<AndroidJavaObject>("currentActivity");
             }
 #else
-            throw new PlatformNotSupportedException("Requires Android Platform.");
+            throw new System.PlatformNotSupportedException("Requires Android Platform.");
+#endif
+        }
+        
+        internal static int GetAndroidSDKVersion()
+        {
+#if PLATFORM_ANDROID
+            using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
+            {
+                return version.GetStatic<int>("SDK_INT");
+            }
+#else
+            throw new System.PlatformNotSupportedException("Requires Android Platform.");
 #endif
         }
     }
