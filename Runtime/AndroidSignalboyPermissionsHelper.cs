@@ -26,7 +26,9 @@ namespace Signalboy.Utilities
             {
                 // Request permission for any Runtime-Permission, that has not yet been authorized.
                 var results = await RequestUserPermissionsAsync(requiredRuntimePermissions.ToArray());
-                Debug.Log($"Finished awaiting requested runtime-permissions. (results={results})");
+                Debug.Log("Finished awaiting requested runtime-permissions. (results=" +
+                          string.Join(", ", results.Select(entry => $"{entry.Key}: {entry.Value}")) +
+                          ")");
                 return IsEachPermissionGranted(results);
             }
 
