@@ -13,58 +13,114 @@ Tested with Unity Version: 2021.3.9f1
 * Place `Signalboy.prefab` from "Default Runtime"-sample into your Scene.
 * Interact with Signalboy-service by interfacing with the GameObject named "Signalboy" from your code:
 ```cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Signalboy;
 using Signalboy.Utilities;
+using Signalboy.Wrappers;
 using UnityEngine;
 
-class MyBehaviour: MonoBehaviour
+class MyBehaviour : MonoBehaviour
 {
-	private SignalboyBehaviour signalboyBehaviour;
+	private SignalboyBehaviour _signalboyBehaviour;
+
+	// Task Factory setup with Unity's Main-thread.
+	private TaskFactory _uiThreadTaskFactory;
 
 	void Start()
 	{
+		_uiThreadTaskFactory = new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext());
+
 		// Make sure to place the "Signalboy.prefab" into your Scene.
 		var signalboyGameObject = GameObject.Find("Signalboy");
-		signalboyBehaviour = signalboyGameObject.GetComponent<SignalboyBehaviour>();
+		_signalboyBehaviour = signalboyGameObject.GetComponent<SignalboyBehaviour>();
 
-		// Run async-task on ui-thread:
-		new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext()).StartNew(async () =>
+		// Run async-task on Unity's Main-thread:
+		_uiThreadTaskFactory.StartNew(async () =>
 		{
-			var isSuccess = await AndroidSignalboyPermissionsHelper.RequestRuntimePermissionsAsync();
-			if (!isSuccess)
+			try
 			{
-				Debug.LogWarning("User did not grant all required permissions!");
-			}
+				var isSuccess = await AndroidSignalboyPermissionsHelper.RequestRuntimePermissionsAsync();
+				if (!isSuccess) Debug.LogWarning("User did not grant all required permissions!");
 
-			SignalboyFacadeWrapper.PrerequisitesResult result = context.signalboyBehaviour.VerifyPrerequisites();
-			if (result.UnmetPrerequisite != null)
-			{
-				HandleUnmetPrerequisite(result.UnmetPrerequisite);
-				return;
+				var result = _signalboyBehaviour.VerifyPrerequisites();
+				if (result.UnmetPrerequisites.Count > 0)
+				{
+					HandleUnmetPrerequisites(result.UnmetPrerequisites);
+					return;
+				}
+
+				var config = SignalboyService.Configuration.Default;
+				_signalboyBehaviour.BindService(config);
 			}
-			signalboyBehaviour.BindService();
-		}
+			catch (Exception exception)
+			{
+				Debug.LogError($"Caught exception: {exception}", this);
+			}
+		});
 	}
 
 	public void OnButtonClicked()
 	{
-		signalboyBehaviour.SendEvent();
+		_signalboyBehaviour.SendEvent();
 	}
 
-	private void HandleUnmetPrerequisite(SignalboyFacadeWrapper.Prerequisite prerequisite)
+	// Call this when it's an appropriate time to interrupt the user-journey with
+	// some UI-dialogs, that Signalboy may trigger to resolve setup steps, which require user-input.
+	public void TryResolveUserInteractionRequest()
 	{
-		switch (prerequisite)
+		// Run async-task on Unity's Main-thread:
+		_uiThreadTaskFactory.StartNew(async () =>
 		{
-			case SignalboyFacadeWrapper.Prerequisite.BluetoothEnabledPrerequisite bluetoothEnabledPrerequisite:
-				// Bluetooth should be always on on Oculus.
-				Debug.LogWarning("HandleUnmetPrerequisite: prerequisite=BluetoothEnabledPrerequisite");
-				break;
-			case SignalboyFacadeWrapper.Prerequisite.RuntimePermissionsPrerequisite runtimePermissionsPrerequisite:
-				Debug.LogWarning($"HandleUnmetPrerequisite: prerequisite=RuntimePermissionsPrerequisite(permission={runtimePermissionsPrerequisite.permission})");
-				break;
-			default:
-				throw new ArgumentException($"Unknown case: prerequisite={prerequisite}");
-		}
+			// Check whether Signalboy is stuck during setup due to an an open User-Interaction-Request.
+			if (_signalboyBehaviour.HasUserInteractionRequest)
+				try
+				{
+					// Calling this may trigger the UI-Dialogs, when necessary. E.g. when Signalboy needs to perform
+					// the selection of a Companion Device (Android/Companion Device Manager API) with the user.
+					await _signalboyBehaviour.ResolveUserInteractionRequestAsync();
+				}
+				catch (Exception exception)
+				{
+					Debug.LogError(
+						"Failed to resolve Signalboy-issued User-Interaction-Request, due to exception:" +
+						exception,
+						this
+					);
+				}
+		});
+	}
+
+	private void HandleUnmetPrerequisites(List<SignalboyService.Prerequisite> prerequisites)
+	{
+		prerequisites.ForEach(prerequisite =>
+		{
+			switch (prerequisite)
+			{
+				case SignalboyService.Prerequisite.BluetoothEnabledPrerequisite aPrerequisite:
+					// Bluetooth should be always on on Oculus.
+					Debug.LogWarning("HandleUnmetPrerequisite: prerequisite=BluetoothEnabledPrerequisite",
+						this);
+					break;
+				case SignalboyService.Prerequisite.RuntimePermissionsPrerequisite aPrerequisite:
+					Debug.LogWarning(
+						"HandleUnmetPrerequisite: prerequisite=RuntimePermissionsPrerequisite(" +
+						$"RuntimePermissions={string.Join(",", aPrerequisite.RuntimePermissions)})",
+						this
+					);
+					break;
+				case SignalboyService.Prerequisite.UsesFeatureDeclarationsPrerequisite aPrerequisite:
+					Debug.LogWarning(
+						"HandleUnmetPrerequisite: prerequisite=UsesFeatureDeclarationsPrerequisite(" +
+						$"UsesFeatures={string.Join(",", aPrerequisite.UsesFeatures)})",
+						this
+					);
+					break;
+				default:
+					throw new ArgumentException($"Unknown case: prerequisite={prerequisites}");
+			}
+		});
 	}
 }
 ```
@@ -117,14 +173,14 @@ Specifiy your custom `SignalboyFacade.Configuration` when binding to the Android
 // […]
 class MyBehaviour: MonoBehaviour
 {
-	private SignalboyBehaviour signalboyBehaviour;
+	private SignalboyBehaviour _signalboyBehaviour;
 
 	void Start()
 	{
 		// […]
 		var config = Signalboy.Wrappers.SignalboyFacadeWrapper.Configuration.Default;
 		config.NormalizationDelay = 100L;   // in ms
-		signalboyBehaviour.BindService(config);
+		_signalboyBehaviour.BindService(config);
 	}
 }
 ```
@@ -135,11 +191,11 @@ You can monitor Signalboy-Service's state by setting a delegate on SignalboyBeha
 // […]
 class MyBehaviour: MonoBehaviour
 {
-	private SignalboyBehaviour signalboyBehaviour;
+	private SignalboyBehaviour _signalboyBehaviour;
 
 	private void SetupSignalboyDelegate()
 	{
-		signalboyBehaviour.ConnectionStateUpdateCallback = OnConnectionStateUpdate;
+		_signalboyBehaviour.ConnectionStateUpdateCallback = OnConnectionStateUpdate;
 	}
 
 	// This method will be called on state-updates.
