@@ -60,7 +60,7 @@ namespace Signalboy
             );
         }
 
-        public async Task ResolveUserInteractionRequest()
+        public async Task ResolveUserInteractionRequestAsync()
         {
             using var activity = AndroidHelper.GetCurrentActivity();
             if (activity == null)
