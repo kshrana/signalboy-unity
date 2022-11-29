@@ -185,8 +185,11 @@ class MyBehaviour: MonoBehaviour
 }
 ```
 
-### Observe state
-You can monitor Signalboy-Service's state by setting a delegate on SignalboyBehaviour's `ConnectionStateUpdateCallback`-property. See the example below on how to install the delegate:
+### Check connection-state
+`SignalboyBehaviour`'s `state`-property returns the current state of the service, or `null` if the service is not bound.
+
+#### Observe
+You can also monitor Signalboy-Service's state by setting a delegate on SignalboyBehaviour's `ConnectionStateUpdateCallback`-property. See the example below on how to install the delegate:
 ```cs
 // […]
 class MyBehaviour: MonoBehaviour
