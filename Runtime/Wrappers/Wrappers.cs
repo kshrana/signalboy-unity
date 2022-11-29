@@ -36,8 +36,8 @@ namespace Signalboy.Wrappers
         public State State =>
             StateFactory.Wrapping(_signalboyServiceInstance.Get<AndroidJavaObject>("state"));
 
-        public bool HasUserInteractionRequest =>
-            _signalboyServiceInstance.Call<bool>("getHasUserInteractionRequest");
+        public bool HasAnyOpenUserInteractionRequest =>
+            _signalboyServiceInstance.Call<bool>("getHasAnyOpenUserInteractionRequest");
 
         internal static AndroidJavaObject GetDefaultAdapter(AndroidJavaObject context)
         {

@@ -17,7 +17,7 @@ namespace Signalboy
         private SignalboyService? _signalboyService;
         public ConnectionStateUpdateCallback? ConnectionStateUpdateCallback;
         public State? State => _signalboyService?.State;
-        public bool HasUserInteractionRequest => _signalboyService?.HasUserInteractionRequest ?? false;
+        public bool HasAnyOpenUserInteractionRequest => _signalboyService?.HasAnyOpenUserInteractionRequest ?? false;
 
         private TaskFactory _uiThreadTaskFactory = null!;
 

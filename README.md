@@ -74,7 +74,7 @@ class MyBehaviour : MonoBehaviour
 		_uiThreadTaskFactory.StartNew(async () =>
 		{
 			// Check whether Signalboy is stuck during setup due to an an open User-Interaction-Request.
-			if (_signalboyBehaviour.HasUserInteractionRequest)
+			if (_signalboyBehaviour.HasAnyOpenUserInteractionRequest)
 				try
 				{
 					// Calling this may trigger the UI-Dialogs, when necessary. E.g. when Signalboy needs to perform
