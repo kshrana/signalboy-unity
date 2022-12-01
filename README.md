@@ -42,7 +42,7 @@ class MyBehaviour : MonoBehaviour
 			try
 			{
 				var isSuccess = await AndroidSignalboyPermissionsHelper.RequestRuntimePermissionsAsync();
-				if (!isSuccess) Debug.LogWarning("User did not grant all required permissions!");
+				if (!isSuccess) Debug.LogWarning("User did not grant all required permissions!", this);
 
 				var result = _signalboyBehaviour.VerifyPrerequisites();
 				if (result.UnmetPrerequisites.Count > 0)
